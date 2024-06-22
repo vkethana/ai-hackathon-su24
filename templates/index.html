@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Game</title>
+    <style>
+        body {
+          margin: 40px auto;
+          max-width: 650px;
+          line-height: 1.6;
+          font-size: 18px;
+          color: #444;
+          padding: 0 10px;
+        }
+
+        h1, h2, h3 {
+          line-height: 1.2
+        }
+
+        #text-container, #submit-response-button, #machine-response-container, #comparison-result {
+            display: none;
+        }
+
+        .textarea-container {
+            display: flex;
+            gap: 10px;
+        }
+
+				#start-game-button, #submit-response-button {
+						margin-top: 100px; /* Adjust this value as needed */
+				}
+
+        .center {
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="textarea-container">
+        <textarea id="text-container" rows="4" cols="40"></textarea>
+        <textarea id="machine-response-container" rows="4" cols="40"></textarea>
+    </div>
+
+    <div class="center">
+      <br />
+      <div id="comparison-result"></div>
+      <br />
+      <button id="submit-response-button">Compare Results with AI</button>
+      <button id="start-game-button">Start Game</button>
+    </div>
+
+    <script>
+      function streamText(container, text, delay = 20) {
+            container.value = ''; // Clear any existing text
+            let index = 0;
+
+            return new Promise((resolve) => {
+                function addChar() {
+                    if (index < text.length) {
+                        container.value += text.charAt(index);
+                        index++;
+                        setTimeout(addChar, delay);
+                    } else {
+                        resolve(); // Resolve the promise when streaming is complete
+                    }
+                }
+                
+                addChar();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const startGameButton = document.getElementById('start-game-button');
+            const textContainer = document.getElementById('text-container');
+            const submitResponseButton = document.getElementById('submit-response-button');
+            const machineResponseContainer = document.getElementById('machine-response-container');
+            const comparisonResult = document.getElementById('comparison-result');
+
+            startGameButton.addEventListener('click', () => {
+                // Make sure there's nothig from the previous game
+                machineResponseContainer.style.display = 'none';
+                textContainer.value = '';
+                machineResponseContainer.value = '';
+                comparisonResult.innerText = '';
+                comparisonResult.style.display = 'none';
+
+                fetch('/generate', {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    textContainer.style.display = 'block';
+                    startGameButton.style.display = 'none';
+                    submitResponseButton.style.display = 'inline';
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            submitResponseButton.addEventListener('click', () => {
+                fetch('/get_machine_response', {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    machineResponseContainer.style.display = 'inline';
+                    // Don't run any code until the text has finished streaming
+                    streamText(machineResponseContainer, data.text).then(() => {
+                      // Do nothing
+                      setTimeout(() => {
+                          comparisonResult.innerText = 'Comparing responses...';
+                          comparisonResult.style.display = 'inline';
+                          
+                          fetch('/compare_responses', {
+                              method: 'POST',
+                              headers: {
+                                  'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                  human_response: textContainer.value,
+                                  machine_response: machineResponseContainer.value
+                              })
+                          })
+                          .then(response => response.json())
+                          .then(data => {
+                              // Hide the "submit" button
+                              submitResponseButton.style.display = 'none';
+                              if (data.winner === 'human') {
+                                  // Put the text in green
+                                  comparisonResult.style.color = 'green';
+                                  // Get the text from the server
+                                  comparisonResult.innerText = 'You win!';
+                              } else {
+                                  // Put the text in red
+                                  comparisonResult.style.color = 'red';
+                                  // Get the text from the server
+                                  comparisonResult.innerText = 'You lose!';
+                              }
+                              // Make the newGameButton visible
+                              startGameButton.style.display = 'inline';
+                              console.log(data);
+                          })
+                          .catch(error => console.error('Error:', error));
+                      }, 10);
+                      });
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+    </script>
+</body>
+</html>
+
