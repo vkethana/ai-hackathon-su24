@@ -48,6 +48,8 @@
     </style>
 </head>
 <body>
+    <div id="ethical-question">
+    </div>
     <div class="textarea-container">
         <textarea id="text-container" rows="4" cols="40" class="centered"></textarea>
         <textarea id="machine-response-container" rows="4" cols="40"></textarea>
@@ -87,6 +89,7 @@
             const submitResponseButton = document.getElementById('submit-response-button');
             const machineResponseContainer = document.getElementById('machine-response-container');
             const comparisonResult = document.getElementById('comparison-result');
+            const ethicalQuestion = document.getElementById('ethical-question');
 
             startGameButton.addEventListener('click', () => {
                 // Make sure there's nothig from the previous game
@@ -101,6 +104,7 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    ethicalQuestion.innerHTML = data.question;
                     textContainer.style.display = 'block';
                     startGameButton.style.display = 'none';
                     submitResponseButton.style.display = 'inline';
@@ -109,8 +113,17 @@
             });
 
             submitResponseButton.addEventListener('click', () => {
+                data_for_request = {
+                    ethical_question: ethicalQuestion.innerHTML,
+                }
+                console.log("Data for request");
+                console.log(data_for_request);
                 fetch('/get_machine_response', {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data_for_request)
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -129,7 +142,8 @@
                               },
                               body: JSON.stringify({
                                   human_response: textContainer.value,
-                                  machine_response: machineResponseContainer.value
+                                  machine_response: machineResponseContainer.value,
+                                  ethical_question: ethicalQuestion.innerHTML,
                               })
                           })
                           .then(response => response.json())
