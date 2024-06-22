@@ -1,6 +1,7 @@
 from openai import OpenAI
+import os
 
-my_api_key = "sk-proj-KjSAhB2IueyGbPVUygDcT3BlbkFJ92bfzuVgppfulAHxslEC" # ADD YOUR OPENAI API KEY HERE
+my_api_key = os.environ["OPENAI_API_KEY"] # ADD YOUR OPENAI API KEY HERE
 SENTENCE_SCORING_MODEL = 'gpt-4-turbo'
 RESPONSE_GENERATION_MODEL = 'gpt-3.5-turbo'
 client = OpenAI(api_key=my_api_key)

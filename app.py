@@ -36,7 +36,7 @@ def compare_responses():
     result = evaluate_translation(human_response, machine_response, ethical_question)
     if result == 1:
         winner = 'human'
-    else if result == 0:
+    elif result == 0:
         winner = 'machine'
     else:
         winner = 'error'
