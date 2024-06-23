@@ -98,92 +98,97 @@
                 addChar();
             });
         }
+        
+        function startGame() {
+            // Make sure there's nothig from the previous game
+            machineResponseContainer.style.display = 'none';
+            textContainer.value = '';
+            machineResponseContainer.value = '';
+            comparisonResult.innerText = '';
+            comparisonResult.style.display = 'none';
+            // Also hide the new multiplayer game option
+            document.getElementById('multiplayer-button').style.display = 'none';
 
-        document.addEventListener('DOMContentLoaded', (event) => {
+            fetch('/generate', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                ethicalQuestion.innerHTML = data.question;
+                textContainer.style.display = 'block';
+                startGameButton.style.display = 'none';
+                submitResponseButton.style.display = 'inline';
+            })
+            .catch(error => console.error('Error:', error));
+        }
 
-            startGameButton.addEventListener('click', () => {
-                // Make sure there's nothig from the previous game
-                machineResponseContainer.style.display = 'none';
-                textContainer.value = '';
-                machineResponseContainer.value = '';
-                comparisonResult.innerText = '';
-                comparisonResult.style.display = 'none';
-                // Also hide the new multiplayer game option
-                document.getElementById('multiplayer-button').style.display = 'none';
-
-                fetch('/generate', {
-                    method: 'POST',
-                })
-                .then(response => response.json())
-                .then(data => {
-                    ethicalQuestion.innerHTML = data.question;
-                    textContainer.style.display = 'block';
-                    startGameButton.style.display = 'none';
-                    submitResponseButton.style.display = 'inline';
-                })
-                .catch(error => console.error('Error:', error));
-            });
-
-            submitResponseButton.addEventListener('click', () => {
-                data_for_request = {
+        function compareBothResponses() {
+            comparisonResult.innerText = 'Comparing responses...';
+            comparisonResult.style.display = 'inline';
+            
+            fetch('/compare_responses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    human_response: textContainer.value,
+                    machine_response: machineResponseContainer.value,
                     ethical_question: ethicalQuestion.innerHTML,
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide the "submit" button
+                if (data.winner === 'human') {
+                    // Put the text in green
+                    comparisonResult.style.color = 'green';
+                    // Get the text from the server
+                    comparisonResult.innerText = 'You win!';
+                } else {
+                    // Put the text in red
+                    comparisonResult.style.color = 'red';
+                    // Get the text from the server
+                    comparisonResult.innerText = 'You lose!';
                 }
-                console.log("Data for request");
-                console.log(data_for_request);
-                fetch('/get_machine_response', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data_for_request)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    submitResponseButton.style.display = 'none';
-                    machineResponseContainer.style.display = 'inline';
-                    // Don't run any code until the text has finished streaming
-                    streamText(machineResponseContainer, data.text).then(() => {
-                      // Do nothing
-                      setTimeout(() => {
-                          comparisonResult.innerText = 'Comparing responses...';
-                          comparisonResult.style.display = 'inline';
-                          
-                          fetch('/compare_responses', {
-                              method: 'POST',
-                              headers: {
-                                  'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({
-                                  human_response: textContainer.value,
-                                  machine_response: machineResponseContainer.value,
-                                  ethical_question: ethicalQuestion.innerHTML,
-                              })
-                          })
-                          .then(response => response.json())
-                          .then(data => {
-                              // Hide the "submit" button
-                              if (data.winner === 'human') {
-                                  // Put the text in green
-                                  comparisonResult.style.color = 'green';
-                                  // Get the text from the server
-                                  comparisonResult.innerText = 'You win!';
-                              } else {
-                                  // Put the text in red
-                                  comparisonResult.style.color = 'red';
-                                  // Get the text from the server
-                                  comparisonResult.innerText = 'You lose!';
-                              }
-                              // Make the newGameButton visible
-                              startGameButton.style.display = 'inline';
-                              console.log(data);
-                          })
-                          .catch(error => console.error('Error:', error));
-                      }, 10);
-                      });
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        });
+                // Make the newGameButton visible
+                startGameButton.style.display = 'inline';
+                console.log(data);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function getMachineResponseAndCompare() {
+            data_for_request = {
+                ethical_question: ethicalQuestion.innerHTML,
+            }
+            console.log("Data for request");
+            console.log(data_for_request);
+            fetch('/get_machine_response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data_for_request)
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitResponseButton.style.display = 'none';
+                machineResponseContainer.style.display = 'inline';
+                // Don't run any code until the text has finished streaming
+                streamText(machineResponseContainer, data.text).then(() => {
+                  // Do nothing
+                  setTimeout(() => {
+                    compareBothResponses();
+                  }, 10);
+                  });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+      startGameButton.addEventListener('click', () => {
+          startGame()
+      });
 
       const multiplayerButton = document.getElementById('multiplayer-button');
 
@@ -236,6 +241,7 @@
 							comparisonResult.style.display = 'inline';
 					} else {
 							// Single player mode (keep your existing code here)
+              getMachineResponseAndCompare();
 					}
 			});
 
