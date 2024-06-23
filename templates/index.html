@@ -24,7 +24,7 @@
         }
 
 				#start-game-button, #submit-response-button, #multiplayer-button {
-						margin-top: 50px; /* Adjust this value as needed */
+						margin-top: 20px; /* Adjust this value as needed */
 				}
 
         .center {
@@ -41,21 +41,41 @@
         }
 
         #machine-response-container {
-            visibility: hidden;
+            display: none;
         }
 
         #machine-response-container.visible {
-            visibility: visible;
+            display: table-cell;
         }
 
         #text-container-container {
-            visibility: hidden;
+            display: none;
         }
 
         #text-container-container.visible {
-            visibility: visible;
+            display: table-cell;
         }
 
+        #text-container, #machine-response {
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        #text-container-label {
+            display: none;
+        }
+
+        #text-container-label.visible {
+            display: table-cell;
+        }
+
+        #machine-response-label {
+            display: none;
+        }
+
+        #machine-response-label.visible {
+            display: table-cell;
+        }
     </style>
 </head>
 <body>
@@ -65,10 +85,10 @@
       <table style="text-align:center;">
         <tr>
           <th>
-            <label id='text-container-label' for="text-container" style="display:none;">Your response:</label>
+            <label id='text-container-label' for="text-container" >Your response:</label>
           </th>
           <th>
-            <label id='machine-response-label' for="machine-response" style="display:none;">Opponent response:</label>
+            <label id='machine-response-label' for="machine-response" >Opponent response:</label>
           </th>
         </tr>
         <tr>
@@ -151,8 +171,8 @@
             // Reset the ethical question
             ethicalQuestion.innerHTML = '';
             // Reset the labels
-            textContainerLabel.style.display = 'none';
-            machineResponseLabel.style.display = 'none';
+            textContainerLabel.classList.remove('visible');
+            machineResponseLabel.classList.remove('visible');
         }
 					
 				function startGame() {
@@ -179,11 +199,16 @@
 				}
 
 				function compareBothResponses() {
-							comparisonResult.innerText = 'Comparing responses...';
+              let ellipses = 0;
+              comparisonResult.innerText = 'Comparing responses' + '.'.repeat(ellipses);
+
+              // Mark this to be halted later once the comparison is done
+              bothRespondedDotsInterval = setInterval(() => {
+                  comparisonResult.innerText = 'Comparing responses' + '.'.repeat(ellipses);
+                  ellipses = (ellipses + 1) % 4;
+              }, 500);
 							comparisonResult.style.display = 'inline';
               // Make both labels 
-              textContainerLabel.style.display = 'inline';
-              //machineResponseLabel.style.display = 'table';
               machineResponseContainer.classList.add('visible');
 							
 							fetch('/compare_responses', {
@@ -199,6 +224,11 @@
 							})
 							.then(response => response.json())
 							.then(data => {
+                  if (bothRespondedDotsInterval) {
+                      clearInterval(bothRespondedDotsInterval);
+                  } else {
+                      console.log("Not clearing interval")
+                  }
 									// Hide the "submit" button
 									if (data.winner === 'human') {
 											// Put the text in green
@@ -238,6 +268,8 @@
 							.then(data => {
 									submitResponseButton.style.display = 'none';
 									//machineResponseContainer.style.display = 'table';
+                  textContainerLabel.classList.add('visible');
+                  machineResponseLabel.classList.add('visible');
                   machineResponseContainer.classList.add('visible');
 									// Don't run any code until the text has finished streaming
 									streamText(machineResponse, data.text).then(() => {
