@@ -7,7 +7,7 @@
     <style>
         body {
           margin: 40px auto;
-          max-width: 650px;
+          max-width: 550px;
           line-height: 1.6;
           font-size: 18px;
           color: #444;
@@ -18,10 +18,11 @@
           line-height: 1.2
         }
 
-        #text-container, #submit-response-button, #machine-response-container, #comparison-result {
+        #text-container, #submit-response-button, #machine-response-container, #comparison-result, #user-response-label, #ai-response-label {
             display: none;
         }
 
+        label {display:block;}
         .textarea-container {
             display: flex;
             gap: 10px;
@@ -33,16 +34,31 @@
             margin: 0 auto;
         }
 
+				.textarea-group {
+						display: flex;
+						flex-direction: column;
+						width: 49%;
+				}
+
+				.textarea-group label {
+						margin-bottom: 5px;
+						font-weight: bold;
+				}
+
         .textarea-container textarea {
-            width: 49%;
+            width: 100%;
         }
 
 				#start-game-button, #submit-response-button {
-						margin-top: 100px; /* Adjust this value as needed */
+						margin-top: 25px; /* Adjust this value as needed */
 				}
 
         .center {
             text-align: center;
+        }
+        
+        #ethical-question {
+            margin-bottom: 20px;
         }
 
     </style>
@@ -50,9 +66,16 @@
 <body>
     <div id="ethical-question">
     </div>
+
     <div class="textarea-container">
-        <textarea id="text-container" rows="4" cols="40" class="centered"></textarea>
-        <textarea id="machine-response-container" rows="4" cols="40"></textarea>
+      <div class="textarea-group">
+          <label for="text-container" id="user-response-label">Your Response:</label>
+          <textarea id="text-container" name="text-container" rows="8" cols="30" class="centered"></textarea>
+      </div>
+      <div class="textarea-group">
+          <label for="machine-response-container" id="ai-response-label">AI Response:</label>
+          <textarea id="machine-response-container" rows="8" cols="40"></textarea>
+      </div>
     </div>
 
     <div class="center">
@@ -90,6 +113,8 @@
             const machineResponseContainer = document.getElementById('machine-response-container');
             const comparisonResult = document.getElementById('comparison-result');
             const ethicalQuestion = document.getElementById('ethical-question');
+            const textContainerLabel = document.getElementById('user-response-label');
+            const machineResponseContainerLabel = document.getElementById('ai-response-label');
 
             startGameButton.addEventListener('click', () => {
                 // Make sure there's nothig from the previous game
@@ -127,7 +152,10 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    machineResponseContainer.style.display = 'inline';
+                    // Make the human response and machine response labels visible
+                    textContainerLabel.style.display = 'block';
+                    machineResponseContainerLabel.style.display = 'block';
+
                     // Don't run any code until the text has finished streaming
                     streamText(machineResponseContainer, data.text).then(() => {
                       // Do nothing
