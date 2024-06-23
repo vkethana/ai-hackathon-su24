@@ -106,9 +106,8 @@ def on_submit(data):
         #emit('both_responded', room=games[game_code]['sid'][other_player])
 
         player1, player2 = games[game_code]['players']
-        '''
-        '''
-        if USE_API_CALLS:
+
+        if DISABLE_API_CALLS:
           time.sleep(1.5)
           result = 1
         else:
