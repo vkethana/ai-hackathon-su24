@@ -67,20 +67,31 @@
       <button id="submit-response-button">Compare Results with AI</button>
       <button id="start-game-button">New Game</button>
       <button id="multiplayer-button">New Multiplayer Game</button>
+			<div id="multiplayer-join" style="display: none;">
+					<input type="text" id="game-code-input" placeholder="Enter game code">
+					<button id="join-game-button">Join Game</button>
+			</div>
     </div>
 
   <script>
       const socket = io();
-      let gameId = null;
+      let gameId = null;      
 
-      const startGameButton = document.getElementById('start-game-button');
-      const textContainer = document.getElementById('text-container');
-      const submitResponseButton = document.getElementById('submit-response-button');
-      const machineResponseContainer = document.getElementById('machine-response-container');
-      const comparisonResult = document.getElementById('comparison-result');
-      const ethicalQuestion = document.getElementById('ethical-question');
+      document.addEventListener('DOMContentLoaded', (event) => {
 
-      function streamText(container, text, delay = 20) {
+        const startGameButton = document.getElementById('start-game-button');
+        const textContainer = document.getElementById('text-container');
+        const submitResponseButton = document.getElementById('submit-response-button');
+        const machineResponseContainer = document.getElementById('machine-response-container');
+        const comparisonResult = document.getElementById('comparison-result');
+        const ethicalQuestion = document.getElementById('ethical-question');
+        const multiplayerButton = document.getElementById('multiplayer-button');
+        const multiplayerJoinDiv = document.getElementById('multiplayer-join');
+        const startMultiplayerButton = document.getElementById('start-multiplayer-button');
+        const joinGameButton = document.getElementById('join-game-button');
+        
+
+        function streamText(container, text, delay = 20) {
             container.value = ''; // Clear any existing text
             let index = 0;
 
@@ -97,153 +108,115 @@
                 
                 addChar();
             });
-        }
-        
-        function startGame() {
-            // Make sure there's nothig from the previous game
-            machineResponseContainer.style.display = 'none';
-            textContainer.value = '';
-            machineResponseContainer.value = '';
-            comparisonResult.innerText = '';
-            comparisonResult.style.display = 'none';
-            // Also hide the new multiplayer game option
-            document.getElementById('multiplayer-button').style.display = 'none';
+          }
 
-            fetch('/generate', {
-                method: 'POST',
-            })
-            .then(response => response.json())
-            .then(data => {
-                ethicalQuestion.innerHTML = data.question;
-                textContainer.style.display = 'block';
-                startGameButton.style.display = 'none';
-                submitResponseButton.style.display = 'inline';
-            })
-            .catch(error => console.error('Error:', error));
-        }
+          function resetGame() {
+              // Make sure there's nothig from the previous game
+              machineResponseContainer.style.display = 'none';
+              textContainer.value = '';
+              machineResponseContainer.value = '';
+              comparisonResult.innerText = '';
+              comparisonResult.style.display = 'none';
+              // Also hide the new multiplayer game option
+              document.getElementById('multiplayer-button').style.display = 'none';
+              currentGameCode = null;
+              multiplayerJoinDiv.style.display = 'none';
+              startMultiplayerButton.style.display = 'inline';
+          }
 
-        function compareBothResponses() {
-            comparisonResult.innerText = 'Comparing responses...';
-            comparisonResult.style.display = 'inline';
-            
-            fetch('/compare_responses', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    human_response: textContainer.value,
-                    machine_response: machineResponseContainer.value,
-                    ethical_question: ethicalQuestion.innerHTML,
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Hide the "submit" button
-                if (data.winner === 'human') {
-                    // Put the text in green
-                    comparisonResult.style.color = 'green';
-                    // Get the text from the server
-                    comparisonResult.innerText = 'You win!';
-                } else {
-                    // Put the text in red
-                    comparisonResult.style.color = 'red';
-                    // Get the text from the server
-                    comparisonResult.innerText = 'You lose!';
-                }
-                // Make the newGameButton visible
-                startGameButton.style.display = 'inline';
-                console.log(data);
-            })
-            .catch(error => console.error('Error:', error));
-        }
+          function startGame() {
+              resetGame();
 
-        function getMachineResponseAndCompare() {
-            data_for_request = {
-                ethical_question: ethicalQuestion.innerHTML,
-            }
-            console.log("Data for request");
-            console.log(data_for_request);
-            fetch('/get_machine_response', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data_for_request)
-            })
-            .then(response => response.json())
-            .then(data => {
-                submitResponseButton.style.display = 'none';
-                machineResponseContainer.style.display = 'inline';
-                // Don't run any code until the text has finished streaming
-                streamText(machineResponseContainer, data.text).then(() => {
-                  // Do nothing
-                  setTimeout(() => {
-                    compareBothResponses();
-                  }, 10);
-                  });
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-      startGameButton.addEventListener('click', () => {
-          startGame()
-      });
-
-      const multiplayerButton = document.getElementById('multiplayer-button');
-
-      multiplayerButton.addEventListener('click', () => {
-          fetch('/create_multiplayer_game', { method: 'POST' })
+              fetch('/generate', {
+                  method: 'POST',
+              })
               .then(response => response.json())
               .then(data => {
-                  gameId = data.game_id;
-                  ethicalQuestion.innerHTML = 'Waiting for another player...';
-                  socket.emit('join', { game_id: gameId });
+                  ethicalQuestion.innerHTML = data.question;
+                  textContainer.style.display = 'block';
                   startGameButton.style.display = 'none';
-                  multiplayerButton.style.display = 'none';
+                  submitResponseButton.style.display = 'inline';
               })
               .catch(error => console.error('Error:', error));
-      });
+          }
 
-			socket.on('start_game', (data) => {
-          console.log('Game started');
-					ethicalQuestion.innerHTML = data.question;
-					textContainer.style.display = 'block';
-					submitResponseButton.style.display = 'inline';
-			});
+          function compareBothResponses() {
+              comparisonResult.innerText = 'Comparing responses...';
+              comparisonResult.style.display = 'inline';
+              
+              fetch('/compare_responses', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      human_response: textContainer.value,
+                      machine_response: machineResponseContainer.value,
+                      ethical_question: ethicalQuestion.innerHTML,
+                  })
+              })
+              .then(response => response.json())
+              .then(data => {
+                  // Hide the "submit" button
+                  if (data.winner === 'human') {
+                      // Put the text in green
+                      comparisonResult.style.color = 'green';
+                      // Get the text from the server
+                      comparisonResult.innerText = 'You win!';
+                  } else {
+                      // Put the text in red
+                      comparisonResult.style.color = 'red';
+                      // Get the text from the server
+                      comparisonResult.innerText = 'You lose!';
+                  }
+                  // Make the newGameButton visible
+                  startGameButton.style.display = 'inline';
+                  console.log(data);
+              })
+              .catch(error => console.error('Error:', error));
+          }
 
-			socket.on('game_result', (data) => {
-					machineResponseContainer.style.display = 'inline';
-					streamText(machineResponseContainer, data.ai_response).then(() => {
-							const result = data.results[socket.id];
-							if (result === 'win') {
-									comparisonResult.style.color = 'green';
-									comparisonResult.innerText = 'You win!';
-							} else {
-									comparisonResult.style.color = 'red';
-									comparisonResult.innerText = 'You lose!';
-							}
-							comparisonResult.style.display = 'inline';
-							startGameButton.style.display = 'inline';
-							multiplayerButton.style.display = 'inline';
-					});
-			});
+          function getMachineResponseAndCompare() {
+              data_for_request = {
+                  ethical_question: ethicalQuestion.innerHTML,
+              }
+              console.log("Data for request");
+              console.log(data_for_request);
+              fetch('/get_machine_response', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(data_for_request)
+              })
+              .then(response => response.json())
+              .then(data => {
+                  submitResponseButton.style.display = 'none';
+                  machineResponseContainer.style.display = 'inline';
+                  // Don't run any code until the text has finished streaming
+                  streamText(machineResponseContainer, data.text).then(() => {
+                    // Do nothing
+                    setTimeout(() => {
+                      compareBothResponses();
+                    }, 10);
+                    });
+              })
+              .catch(error => console.error('Error:', error));
+        }
+        startGameButton.addEventListener('click', () => {
+            startGame()
+        });
 
-			// Modify the submitResponseButton event listener
-			submitResponseButton.addEventListener('click', () => {
-					if (gameId) {
-							socket.emit('submit_response', {
-									game_id: gameId,
-									response: textContainer.value
-							});
-							submitResponseButton.style.display = 'none';
-							comparisonResult.innerText = 'Waiting for other player...';
-							comparisonResult.style.display = 'inline';
-					} else {
-							// Single player mode (keep your existing code here)
+        // Modify the submitResponseButton event listener
+        submitResponseButton.addEventListener('click', () => {
+            if (gameId) {
+              // Multiplayer mode
+            } else {
+              // Single player mode (keep your existing code here)
               getMachineResponseAndCompare();
-					}
-			});
+            }
+        });
+      });
 
     </script>
 </body>
