@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UCB AI Hackathon Submission</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body {
           margin: 40px auto;
@@ -37,8 +38,8 @@
             width: 49%;
         }
 
-				#start-game-button, #submit-response-button {
-						margin-top: 100px; /* Adjust this value as needed */
+				#start-game-button, #submit-response-button, #multiplayer-button {
+						margin-top: 50px; /* Adjust this value as needed */
 				}
 
         .center {
@@ -55,8 +56,8 @@
     <div id="ethical-question">
     </div>
     <div class="textarea-container">
-        <textarea id="text-container" rows="4" cols="40" class="centered"></textarea>
-        <textarea id="machine-response-container" rows="4" cols="40"></textarea>
+        <textarea id="text-container" rows="12" cols="40" class="centered"></textarea>
+        <textarea id="machine-response-container" rows="12" cols="40"></textarea>
     </div>
 
     <div class="center">
@@ -65,9 +66,20 @@
       <br />
       <button id="submit-response-button">Compare Results with AI</button>
       <button id="start-game-button">New Game</button>
+      <button id="multiplayer-button">New Multiplayer Game</button>
     </div>
 
-    <script>
+  <script>
+      const socket = io();
+      let gameId = null;
+
+      const startGameButton = document.getElementById('start-game-button');
+      const textContainer = document.getElementById('text-container');
+      const submitResponseButton = document.getElementById('submit-response-button');
+      const machineResponseContainer = document.getElementById('machine-response-container');
+      const comparisonResult = document.getElementById('comparison-result');
+      const ethicalQuestion = document.getElementById('ethical-question');
+
       function streamText(container, text, delay = 20) {
             container.value = ''; // Clear any existing text
             let index = 0;
@@ -88,12 +100,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', (event) => {
-            const startGameButton = document.getElementById('start-game-button');
-            const textContainer = document.getElementById('text-container');
-            const submitResponseButton = document.getElementById('submit-response-button');
-            const machineResponseContainer = document.getElementById('machine-response-container');
-            const comparisonResult = document.getElementById('comparison-result');
-            const ethicalQuestion = document.getElementById('ethical-question');
 
             startGameButton.addEventListener('click', () => {
                 // Make sure there's nothig from the previous game
@@ -102,6 +108,8 @@
                 machineResponseContainer.value = '';
                 comparisonResult.innerText = '';
                 comparisonResult.style.display = 'none';
+                // Also hide the new multiplayer game option
+                document.getElementById('multiplayer-button').style.display = 'none';
 
                 fetch('/generate', {
                     method: 'POST',
@@ -176,6 +184,61 @@
                 .catch(error => console.error('Error:', error));
             });
         });
+
+      const multiplayerButton = document.getElementById('multiplayer-button');
+
+      multiplayerButton.addEventListener('click', () => {
+          fetch('/create_multiplayer_game', { method: 'POST' })
+              .then(response => response.json())
+              .then(data => {
+                  gameId = data.game_id;
+                  ethicalQuestion.innerHTML = 'Waiting for another player...';
+                  socket.emit('join', { game_id: gameId });
+                  startGameButton.style.display = 'none';
+                  multiplayerButton.style.display = 'none';
+              })
+              .catch(error => console.error('Error:', error));
+      });
+
+			socket.on('start_game', (data) => {
+          console.log('Game started');
+					ethicalQuestion.innerHTML = data.question;
+					textContainer.style.display = 'block';
+					submitResponseButton.style.display = 'inline';
+			});
+
+			socket.on('game_result', (data) => {
+					machineResponseContainer.style.display = 'inline';
+					streamText(machineResponseContainer, data.ai_response).then(() => {
+							const result = data.results[socket.id];
+							if (result === 'win') {
+									comparisonResult.style.color = 'green';
+									comparisonResult.innerText = 'You win!';
+							} else {
+									comparisonResult.style.color = 'red';
+									comparisonResult.innerText = 'You lose!';
+							}
+							comparisonResult.style.display = 'inline';
+							startGameButton.style.display = 'inline';
+							multiplayerButton.style.display = 'inline';
+					});
+			});
+
+			// Modify the submitResponseButton event listener
+			submitResponseButton.addEventListener('click', () => {
+					if (gameId) {
+							socket.emit('submit_response', {
+									game_id: gameId,
+									response: textContainer.value
+							});
+							submitResponseButton.style.display = 'none';
+							comparisonResult.innerText = 'Waiting for other player...';
+							comparisonResult.style.display = 'inline';
+					} else {
+							// Single player mode (keep your existing code here)
+					}
+			});
+
     </script>
 </body>
 </html>
