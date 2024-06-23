@@ -107,12 +107,14 @@ def on_submit(data):
 
         player1, player2 = games[game_code]['players']
         '''
-        result = evaluate_translation(games[game_code]['responses'][player1], 
-                                      games[game_code]['responses'][player2], 
-                                      games[game_code]['question'])
         '''
-        time.sleep(1.5)
-        result = 1
+        if USE_API_CALLS:
+          time.sleep(1.5)
+          result = 1
+        else:
+          result = evaluate_translation(games[game_code]['responses'][player1], 
+                                        games[game_code]['responses'][player2], 
+                                        games[game_code]['question'])
 
         winner = player1 if result == 1 else player2
         print("Emitting game result")

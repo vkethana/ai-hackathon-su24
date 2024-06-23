@@ -8,7 +8,7 @@
     <style>
         body {
           max-width: 550px; 
-          margin: 40px auto; 
+          margin: 20px auto; 
           padding: 0 10px; 
           font: 18px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; 
           color: #444 
@@ -76,11 +76,97 @@
         #machine-response-label.visible {
             display: table-cell;
         }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hamburger {
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+.settings-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.settings-overlay.active {
+    display: flex;
+}
+
+.settings {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    max-width: 400px;
+    width: 90%;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-item label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#model-select {
+    width: 100%;
+    padding: 5px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+}
+
+#closesettings {
+    margin-top: 15px;
+    padding: 5px 10px;
+    background-color: #f1f1f1;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#closesettings:hover {
+    background-color: #e1e1e1;
+}
     </style>
 </head>
 <body>
-    <h3 style="text-align:center">GPTEthics: Interactive Ethical Simulations</h1>
+    <header>
+        <h3>GPTEthics: AI-Powered Evaluation of Challenging Ethical Scenarios</h3>
+        <div class="hamburger" onclick="toggleSettings()">☰</div>
+    </header>
     <hr />
+
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings" id="settingsPage">
+            <h2>Settings</h2>
+            <div class="setting-item">
+                <label for="model-select">Select Model:</label>
+                <select id="model-select">
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="claude-2">Claude 2</option>
+                    <option value="palm">PaLM</option>
+                </select>
+            </div>
+            <button id="closeSettings">Close</button>
+        </div>
+    </div>
+
     <div id="ethical-question-div" style="display:none;">
       <span><b>What would you do in the following scenario:</b></span>
       <span id="ethical-question"></span>
@@ -420,6 +506,35 @@
 				});
 
 		</script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+    const hamburger = document.querySelector('.hamburger');
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const closeSettings = document.getElementById('closeSettings');
+    const modelSelect = document.getElementById('model-select');
+    
+    function toggleSettings() {
+        settingsOverlay.classList.toggle('active');
+    }
+
+    hamburger.addEventListener('click', toggleSettings);
+    closeSettings.addEventListener('click', toggleSettings);
+
+    modelSelect.addEventListener('change', function() {
+        const selectedModel = this.value;
+        console.log('Selected model:', selectedModel);
+        // Here you can add logic to handle the model change
+    });
+
+    // Close settings if clicking outside the settings box
+    settingsOverlay.addEventListener('click', function(event) {
+        if (event.target === settingsOverlay) {
+            toggleSettings();
+        }
+    });
+});
+    </script>
+
 </body>
 </html>
 
