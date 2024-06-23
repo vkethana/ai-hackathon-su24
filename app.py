@@ -53,52 +53,5 @@ def compare_responses():
         winner = 'error'
     return jsonify({'winner': winner})
 
-@socketio.on('join_game')
-def on_join_game(data):
-    game_code = data['game_code']
-    if game_code not in games:
-        games[game_code] = {
-            'players': [],
-            'responses': {},
-            'question': get_ethical_question()
-        }
-
-    if len(games[game_code]['players']) < 2:
-        join_room(game_code)
-        games[game_code]['players'].append(request.sid)
-
-        if len(games[game_code]['players']) == 2:
-            emit('start_game', {'question': games[game_code]['question']}, room=game_code)
-        else:
-            emit('waiting_for_player', room=game_code)
-    else:
-        emit('game_full')
-
-@socketio.on('submit_multiplayer_response')
-def on_submit_multiplayer_response(data):
-    game_code = data['game_code']
-    response = data['response']
-    games[game_code]['responses'][request.sid] = response
-
-    if len(games[game_code]['responses']) == 2:
-        if DISABLE_API_CALLS:
-            ai_response = "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
-        else:
-            ai_response = generate_ai_response(games[game_code]['question'])
-
-        results = {}
-        for player, resp in games[game_code]['responses'].items():
-            if DISABLE_API_CALLS:
-                result = random.choice([0, 1])
-            else:
-                result = evaluate_translation(resp, ai_response, games[game_code]['question'])
-            results[player] = 'win' if result == 1 else 'lose'
-
-        emit('game_result', {
-            'results': results,
-            'ai_response': ai_response
-        }, room=game_code)
-        del games[game_code]
-
 if __name__ == '__main__':
     socketio.run(app, debug=True)
