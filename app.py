@@ -53,5 +53,74 @@ def compare_responses():
         winner = 'error'
     return jsonify({'winner': winner})
 
+
+@socketio.on('join_game')
+def on_join(data):
+    game_code = data['game_code']
+    print("Joined with game code ", game_code)
+    if game_code not in games:
+        games[game_code] = {
+            'players': [],
+            'question': get_ethical_question(),
+            'responses': {},
+            'sid': {}  # Add this line to store socket IDs
+        }
+        print("Made new game with code ", game_code)
+    else:
+      print("Joining existing game")
+
+    if len(games[game_code]['players']) < 2:
+        print("Game doesn't have 2 players")
+        player_id = str(uuid.uuid4())
+        join_room(game_code)
+        games[game_code]['players'].append(player_id)
+        games[game_code]['sid'][player_id] = request.sid  # Store the socket ID
+        emit('game_joined', {'player_id': player_id, 'question': games[game_code]['question']}, room=request.sid)
+        print("Games now equals", games)
+
+        if len(games[game_code]['players']) == 2:
+            print("Joining game! Both responses received")
+            emit('game_ready', room=game_code)
+
+    else:
+        emit('game_full', room=request.sid)
+
+@socketio.on('submit_response')
+def on_submit(data):
+    game_code = data['game_code']
+    player_id = data['player_id']
+    response = data['response']
+
+    games[game_code]['responses'][player_id] = response
+    print("Received response from player ", player_id)
+    print("Responses now equal ", games[game_code]['responses'])
+    print("Games now equal ", games)
+
+    if len(games[game_code]['responses']) == 2:
+        print("Emitting both_responded")
+        # send to both users
+        emit('both_responded', room=game_code)
+        #other_player = [p for p in games[game_code]['players'] if p != player_id][0]
+        #emit('both_responded', room=games[game_code]['sid'][other_player])
+
+        player1, player2 = games[game_code]['players']
+        '''
+        result = evaluate_translation(games[game_code]['responses'][player1], 
+                                      games[game_code]['responses'][player2], 
+                                      games[game_code]['question'])
+        '''
+        time.sleep(3.5)
+        result = 1
+
+        winner = player1 if result == 1 else player2
+        print("Emitting game result")
+        print("Result is ", result)
+        emit('game_result', {'winner': winner}, room=game_code)
+
+        # Clean up the game
+        del games[game_code]
+    else:
+      print("Both people haven't responded yet, so I will do nothing")
+
 if __name__ == '__main__':
     socketio.run(app, debug=True)
