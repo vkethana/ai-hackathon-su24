@@ -6,7 +6,7 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 import uuid
 
 app = Flask(__name__)
-DISABLE_API_CALLS = True
+DISABLE_API_CALLS = False
 
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app)
@@ -18,7 +18,9 @@ def index():
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    return jsonify({'question': get_ethical_question()})
+    question = get_ethical_question()
+    print("Question = ", question)
+    return jsonify({'question': question})
 
 @app.route('/get_machine_response', methods=['POST'])
 def get_machine_response():
