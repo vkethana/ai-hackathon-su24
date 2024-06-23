@@ -7,13 +7,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body {
-          margin: 40px auto;
-          max-width: 550px;
-          line-height: 1.6;
-          font-size: 18px;
-          color: #444;
-          padding: 0 10px;
-        }
+          max-width: 550px; 
+          margin: 40px auto; 
+          padding: 0 10px; 
+          font: 18px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; 
+          color: #444 
+        } 
+
 
         h1, h2, h3 {
           line-height: 1.2
@@ -69,7 +69,7 @@
       <button id="multiplayer-button">New Multiplayer Game</button>
       <div id="multiplayer-input" style="display: none;">
         <input type="text" id="game-code-input" placeholder="Enter game code">
-        <button id="join-game-button">Join Game</button>
+#         <button id="join-game-button">Join Game</button>
       </div>
     </div>
 
@@ -105,14 +105,27 @@
 									addChar();
 							});
 				}
-					
-				function startGame() {
+
+        function clearGame() {
 						// Make sure there's nothig from the previous game
 						machineResponseContainer.style.display = 'none';
+						textContainer.style.display = 'none';
+
 						textContainer.value = '';
 						machineResponseContainer.value = '';
+
 						comparisonResult.innerText = '';
 						comparisonResult.style.display = 'none';
+            // Reset color
+						comparisonResult.style.color = '#444';
+            // Reset the ethical question
+            ethicalQuestion.innerHTML = '';
+        }
+					
+				function startGame() {
+            startGameButton.style.display = 'none';
+            clearGame();
+
 						// Also hide the new multiplayer game option
 						document.getElementById('multiplayer-button').style.display = 'none';
 
@@ -126,7 +139,6 @@
 
 								ethicalQuestion.innerHTML = data.question;
 								textContainer.style.display = 'block';
-								startGameButton.style.display = 'none';
 								submitResponseButton.style.display = 'inline';
 						})
 						.catch(error => console.error('Error:', error));
@@ -204,9 +216,9 @@
 				});
 
 				document.getElementById('multiplayer-button').addEventListener('click', () => {
+            clearGame();
 						document.getElementById('multiplayer-input').style.display = 'block';
 						document.getElementById('multiplayer-button').style.display = 'none';
-            // Hide the orindary start game button
             startGameButton.style.display = 'none';
 				});
 
@@ -246,15 +258,38 @@
 						alert('This game is already full. Please try a different game code.');
 				});
 
-				socket.on('both_responded', () => {
+				socket.on('both_responded', (data) => {
             console.log("Just heard that both players have responded");
             console.log("And they responded on the right room");
+            responses = data.responses;
+            // Get the keys of resopnses
+            responses = Object.keys(responses);
+            // Get the key which does not match the playerId
+            otherPlayerId = responses.filter((response) => response !== playerId)[0];
+            // Get the response of the other player
+            otherPlayerResponse = data.responses[otherPlayerId];
+            // Show the response of the other player
+            console.log("The other player said:");
+            console.log(otherPlayerResponse);
+
+            // Show the response of the other player
+            machineResponseContainer.style.display = 'inline';
+            
+            // Don't run any code until the text has finished streaming
+            streamText(machineResponseContainer, otherPlayerResponse).then(() => {
+              // Do nothing
+              // Set 10-second timeout before continuing
+              setTimeout(() => {
+                return 
+              }, 10);
+            });
+
             // Make the number of ellipses change
             let ellipses = 3;
-            comparisonResult.innerText = 'Other user has submitted! Comparing responses' + '.'.repeat(ellipses);
+            comparisonResult.innerText = 'Comparing responses' + '.'.repeat(ellipses);
             // Mark this to be halted later once the comparison is done
             bothRespondedDotsInterval = setInterval(() => {
-                comparisonResult.innerText = 'Other user has submitted! Comparing responses' + '.'.repeat(ellipses);
+                comparisonResult.innerText = 'Comparing responses' + '.'.repeat(ellipses);
                 ellipses = (ellipses + 1) % 4;
             }, 500);
             
