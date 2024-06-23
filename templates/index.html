@@ -116,7 +116,8 @@
     </div>
 
 		<script>
-				const socket = io.connect(':8080');
+				//const socket = io.connect(':8080');
+				const socket = io();
 				let gameId = null;
         let playerId = null;
         let waitingForOtherPlayer = false;

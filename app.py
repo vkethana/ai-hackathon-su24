@@ -6,7 +6,7 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 import uuid
 
 app = Flask(__name__)
-DISABLE_API_CALLS = True
+DISABLE_API_CALLS = False
 
 app.config['SECRET_KEY'] = 'my_secret'
 socketio = SocketIO(app)
@@ -31,7 +31,7 @@ def get_machine_response():
     if DISABLE_API_CALLS: # Use to speed up debugging
         machine_response = "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
     else:
-      machine_response = generate_ai_response(ethical_question)
+        machine_response = generate_ai_response(ethical_question)
     return jsonify({'text': machine_response})
 
 @app.route('/compare_responses', methods=['POST'])
