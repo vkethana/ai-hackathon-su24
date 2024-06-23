@@ -6,7 +6,7 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 import uuid
 
 app = Flask(__name__)
-DISABLE_API_CALLS = True
+DISABLE_API_CALLS = False
 
 app.config['SECRET_KEY'] = 'my_secret'
 socketio = SocketIO(app)
