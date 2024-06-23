@@ -49,7 +49,6 @@ def compare_responses():
     human_response = data.get('human_response', '')
     machine_response = data.get('machine_response', '')
     ethical_question = data.get('ethical_question', '')
-    time.sleep(1.5)
 
     if DISABLE_API_CALLS:
       result = 1
@@ -126,7 +125,7 @@ def on_submit(data):
 
         winner = player1 if result == 1 else player2
         print("Emitting game result")
-        print("Result is ", result)
+        print("Result is ", winner)
         emit('game_result', {'winner': winner}, room=game_code)
 
         # Clean up the game
