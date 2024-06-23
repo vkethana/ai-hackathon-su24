@@ -53,7 +53,7 @@
     </style>
 </head>
 <body>
-    <div id="ethical-question">
+    <div id="ethical-question" style="display: none;">
     </div>
     <div class="textarea-container">
         <textarea id="text-container" rows="12" cols="40" class="centered"></textarea>
@@ -76,6 +76,8 @@
 		<script>
 				const socket = io();
 				let gameId = null;
+        let playerId = null;
+        let waitingForOtherPlayer = false;
 
 				const startGameButton = document.getElementById('start-game-button');
 				const textContainer = document.getElementById('text-container');
@@ -201,6 +203,8 @@
 				document.getElementById('multiplayer-button').addEventListener('click', () => {
 						document.getElementById('multiplayer-input').style.display = 'block';
 						document.getElementById('multiplayer-button').style.display = 'none';
+            // Hide the orindary start game button
+            startGameButton.style.display = 'none';
 				});
 
 				document.getElementById('join-game-button').addEventListener('click', () => {
@@ -211,15 +215,24 @@
 				socket.on('game_joined', (data) => {
 						playerId = data.player_id;
 						gameId = document.getElementById('game-code-input').value;
-						ethicalQuestion.innerHTML = data.question;
-						textContainer.style.display = 'block';
 						document.getElementById('multiplayer-input').style.display = 'none';
 						document.getElementById('start-game-button').style.display = 'none';
+						document.getElementById('multiplayer-button').style.display = 'none';
+						
+						waitingForOtherPlayer = true;
+						comparisonResult.innerText = 'Waiting for other player to join...';
+						comparisonResult.style.display = 'inline';
 				});
 
-				socket.on('game_ready', () => {
-						submitResponseButton.style.display = 'inline';
-						submitResponseButton.innerText = 'Submit Response';
+				socket.on('game_ready', (data) => {
+						if (waitingForOtherPlayer) {
+								waitingForOtherPlayer = false;
+								ethicalQuestion.innerHTML = data.question;
+								textContainer.style.display = 'block';
+								submitResponseButton.style.display = 'inline';
+								submitResponseButton.innerText = 'Submit Response';
+								comparisonResult.style.display = 'none';
+						}
 				});
 
 				socket.on('game_full', () => {

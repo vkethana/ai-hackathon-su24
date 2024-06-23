@@ -53,7 +53,6 @@ def compare_responses():
         winner = 'error'
     return jsonify({'winner': winner})
 
-
 @socketio.on('join_game')
 def on_join(data):
     game_code = data['game_code']
@@ -63,25 +62,24 @@ def on_join(data):
             'players': [],
             'question': get_ethical_question(),
             'responses': {},
-            'sid': {}  # Add this line to store socket IDs
+            'sid': {}
         }
         print("Made new game with code ", game_code)
     else:
-      print("Joining existing game")
+        print("Joining existing game")
 
     if len(games[game_code]['players']) < 2:
         print("Game doesn't have 2 players")
         player_id = str(uuid.uuid4())
         join_room(game_code)
         games[game_code]['players'].append(player_id)
-        games[game_code]['sid'][player_id] = request.sid  # Store the socket ID
-        emit('game_joined', {'player_id': player_id, 'question': games[game_code]['question']}, room=request.sid)
+        games[game_code]['sid'][player_id] = request.sid
+        emit('game_joined', {'player_id': player_id}, room=request.sid)
         print("Games now equals", games)
 
         if len(games[game_code]['players']) == 2:
-            print("Joining game! Both responses received")
-            emit('game_ready', room=game_code)
-
+            print("Both players joined, sending question")
+            emit('game_ready', {'question': games[game_code]['question']}, room=game_code)
     else:
         emit('game_full', room=request.sid)
 
