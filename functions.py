@@ -88,7 +88,6 @@ def generate_ai_response(ethical_question, model=SENTENCE_SCORING_MODEL):
       response_body = response['body'].read().decode('utf-8')
       parsed_response = json.loads(response_body)
       res = parsed_response['results'][0]['outputText']
-      print(res)
       return res
 
 def evaluate_translation(human_response, ai_response, ethical_question):
