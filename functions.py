@@ -73,7 +73,7 @@ def generate_ai_response(ethical_question, model=SENTENCE_SCORING_MODEL):
         messages=[
             {
                 "role": "user",
-                "content": "Hello, World!",
+                "content": system_prompt + " " + user_prompt,
             }
         ],
         model=model,
