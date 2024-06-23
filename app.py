@@ -6,7 +6,7 @@ from flask_socketio import SocketIO, join_room, leave_room, emit
 import uuid
 
 app = Flask(__name__)
-DISABLE_API_CALLS = False
+DISABLE_API_CALLS = True
 
 app.config['SECRET_KEY'] = 'my_secret'
 socketio = SocketIO(app)
@@ -111,7 +111,7 @@ def on_submit(data):
                                       games[game_code]['responses'][player2], 
                                       games[game_code]['question'])
         '''
-        time.sleep(3.5)
+        time.sleep(1.5)
         result = 1
 
         winner = player1 if result == 1 else player2

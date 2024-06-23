@@ -79,7 +79,11 @@
     </style>
 </head>
 <body>
-    <div id="ethical-question">
+    <h3 style="text-align:center">GPTEthics: Interactive Ethical Simulations</h1>
+    <hr />
+    <div id="ethical-question-div" style="display:none;">
+      <span><b>What would you do in the following scenario:</b></span>
+      <span id="ethical-question"></span>
     </div>
 		<div>
       <table style="text-align:center;">
@@ -133,6 +137,7 @@
 
 				const comparisonResult = document.getElementById('comparison-result');
 				const ethicalQuestion = document.getElementById('ethical-question');
+				const ethicalQuestionDiv = document.getElementById('ethical-question-div');
 
         let bothRespondedDotsInterval;
 
@@ -191,6 +196,7 @@
                 console.log("Data from server");
                 console.log(data);
 
+                ethicalQuestionDiv.style.display = 'block';
 								ethicalQuestion.innerHTML = data.question;
 								//textContainerContainer.style.display = 'table';
                 textContainerContainer.classList.add('visible');
@@ -315,7 +321,10 @@
 						if (waitingForOtherPlayer) {
 								waitingForOtherPlayer = false;
 								ethicalQuestion.innerHTML = data.question;
-								textContainerContainer.style.display = 'block';
+                // show the ethical dillema
+                ethicalQuestionDiv.style.display = 'block';
+                textContainerContainer.classList.add('visible');
+
 								submitResponseButton.style.display = 'inline';
 								submitResponseButton.innerText = 'Submit Response';
 								comparisonResult.style.display = 'none';
@@ -345,8 +354,11 @@
             console.log(otherPlayerResponse);
 
             // Show the response of the other player
-            //machineResponseContainer.style.display = 'block';
             machineResponseContainer.classList.add('visible');
+
+            // Display labels for the textareas
+            textContainerLabel.classList.add('visible');
+            machineResponseLabel.classList.add('visible');
             
             // Don't run any code until the text has finished streaming
             streamText(machineResponse, otherPlayerResponse).then(() => {
