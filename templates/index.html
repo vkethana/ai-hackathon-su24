@@ -19,23 +19,8 @@
           line-height: 1.2
         }
 
-        #text-container, #submit-response-button, #machine-response-container, #comparison-result {
+        #submit-response-button, #comparison-result {
             display: none;
-        }
-
-        .textarea-container {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        #text-container.centered {
-            margin: 0 auto;
-        }
-
-        .textarea-container textarea {
-            width: 49%;
         }
 
 				#start-game-button, #submit-response-button, #multiplayer-button {
@@ -50,23 +35,60 @@
               margin-bottom: 20px;
         }
 
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        #machine-response-container {
+            visibility: hidden;
+        }
+
+        #machine-response-container.visible {
+            visibility: visible;
+        }
+
+        #text-container-container {
+            visibility: hidden;
+        }
+
+        #text-container-container.visible {
+            visibility: visible;
+        }
+
     </style>
 </head>
 <body>
     <div id="ethical-question">
     </div>
-    <div class="textarea-container">
-        <textarea id="text-container" rows="12" cols="40" class="centered"></textarea>
-        <textarea id="machine-response-container" rows="12" cols="40"></textarea>
-    </div>
+		<div>
+      <table style="text-align:center;">
+        <tr>
+          <th>
+            <label id='text-container-label' for="text-container" style="display:none;">Your response:</label>
+          </th>
+          <th>
+            <label id='machine-response-label' for="machine-response" style="display:none;">Opponent response:</label>
+          </th>
+        </tr>
+        <tr>
+          <td id='text-container-container'>
+            <textarea id='text-container' rows="12" name='text-container'></textarea>
+          </td>
+          <td id='machine-response-container'>
+            <textarea id='machine-response' rows="12" name='machine-response'></textarea>
+          </td>
+        </tr>
+      </table>
+		</div>
 
     <div class="center">
       <br />
       <div id="comparison-result"></div>
       <br />
       <button id="submit-response-button">Compare Results with AI</button>
-      <button id="start-game-button">New Game</button>
-      <button id="multiplayer-button">New Multiplayer Game</button>
+      <button id="start-game-button">New Game (vs. AI)</button>
+      <button id="multiplayer-button">New Game (vs. human)</button>
       <div id="multiplayer-input" style="display: none;">
         <input type="text" id="game-code-input" placeholder="Enter game code">
 #         <button id="join-game-button">Join Game</button>
@@ -80,11 +102,17 @@
         let waitingForOtherPlayer = false;
 
 				const startGameButton = document.getElementById('start-game-button');
+				const textContainerContainer = document.getElementById('text-container-container');
 				const textContainer = document.getElementById('text-container');
 				const submitResponseButton = document.getElementById('submit-response-button');
 				const machineResponseContainer = document.getElementById('machine-response-container');
+        const machineResponse = document.getElementById('machine-response');
+        const textContainerLabel = document.getElementById('text-container-label');
+        const machineResponseLabel = document.getElementById('machine-response-label');
+
 				const comparisonResult = document.getElementById('comparison-result');
 				const ethicalQuestion = document.getElementById('ethical-question');
+
         let bothRespondedDotsInterval;
 
 				function streamText(container, text, delay = 20) {
@@ -108,11 +136,13 @@
 
         function clearGame() {
 						// Make sure there's nothig from the previous game
-						machineResponseContainer.style.display = 'none';
-						textContainer.style.display = 'none';
+						//machineResponseContainer.style.display = 'none';
+            machineResponseContainer.classList.remove('visible');
+						//textContainerContainer.style.display = 'none';
+            textContainerContainer.classList.remove('visible');
 
 						textContainer.value = '';
-						machineResponseContainer.value = '';
+						machineResponse.value = '';
 
 						comparisonResult.innerText = '';
 						comparisonResult.style.display = 'none';
@@ -120,6 +150,9 @@
 						comparisonResult.style.color = '#444';
             // Reset the ethical question
             ethicalQuestion.innerHTML = '';
+            // Reset the labels
+            textContainerLabel.style.display = 'none';
+            machineResponseLabel.style.display = 'none';
         }
 					
 				function startGame() {
@@ -138,7 +171,8 @@
                 console.log(data);
 
 								ethicalQuestion.innerHTML = data.question;
-								textContainer.style.display = 'block';
+								//textContainerContainer.style.display = 'table';
+                textContainerContainer.classList.add('visible');
 								submitResponseButton.style.display = 'inline';
 						})
 						.catch(error => console.error('Error:', error));
@@ -147,6 +181,10 @@
 				function compareBothResponses() {
 							comparisonResult.innerText = 'Comparing responses...';
 							comparisonResult.style.display = 'inline';
+              // Make both labels 
+              textContainerLabel.style.display = 'inline';
+              //machineResponseLabel.style.display = 'table';
+              machineResponseContainer.classList.add('visible');
 							
 							fetch('/compare_responses', {
 									method: 'POST',
@@ -155,7 +193,7 @@
 									},
 									body: JSON.stringify({
 											human_response: textContainer.value,
-											machine_response: machineResponseContainer.value,
+											machine_response: machineResponse.value,
 											ethical_question: ethicalQuestion.innerHTML,
 									})
 							})
@@ -199,9 +237,10 @@
 							.then(response => response.json())
 							.then(data => {
 									submitResponseButton.style.display = 'none';
-									machineResponseContainer.style.display = 'inline';
+									//machineResponseContainer.style.display = 'table';
+                  machineResponseContainer.classList.add('visible');
 									// Don't run any code until the text has finished streaming
-									streamText(machineResponseContainer, data.text).then(() => {
+									streamText(machineResponse, data.text).then(() => {
 										// Do nothing
 										setTimeout(() => {
 											compareBothResponses();
@@ -243,7 +282,7 @@
 						if (waitingForOtherPlayer) {
 								waitingForOtherPlayer = false;
 								ethicalQuestion.innerHTML = data.question;
-								textContainer.style.display = 'block';
+								textContainerContainer.style.display = 'block';
 								submitResponseButton.style.display = 'inline';
 								submitResponseButton.innerText = 'Submit Response';
 								comparisonResult.style.display = 'none';
@@ -273,10 +312,11 @@
             console.log(otherPlayerResponse);
 
             // Show the response of the other player
-            machineResponseContainer.style.display = 'inline';
+            //machineResponseContainer.style.display = 'block';
+            machineResponseContainer.classList.add('visible');
             
             // Don't run any code until the text has finished streaming
-            streamText(machineResponseContainer, otherPlayerResponse).then(() => {
+            streamText(machineResponse, otherPlayerResponse).then(() => {
               // Do nothing
               // Set 10-second timeout before continuing
               setTimeout(() => {
