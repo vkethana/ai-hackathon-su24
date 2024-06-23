@@ -31,7 +31,16 @@ def get_machine_response():
     if DISABLE_API_CALLS: # Use to speed up debugging
         machine_response = "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
     else:
-        machine_response = generate_ai_response(ethical_question)
+        try:
+          model = data.get('model', 'gpt-3.5-turbo')
+          print('model', data['model'])
+          machine_response = generate_ai_response(ethical_question, model=data['model'])
+        except Exception as e:
+          print("ERROR USING USER SELECTED MODEL")
+          print(e)
+          print("fallabck to default model")
+          machine_response = generate_ai_response(ethical_question)
+
     return jsonify({'text': machine_response})
 
 @app.route('/compare_responses', methods=['POST'])

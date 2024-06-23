@@ -157,20 +157,25 @@
             <div class="setting-item">
                 <label for="model-select">Select Model:</label>
                 <select id="model-select">
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="claude-2">Claude 2</option>
-                    <option value="palm">PaLM</option>
+                    <option value="gpt-4-turbo" selected>GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5-Turbo</option>
+                    <option value="arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-v2">Claude-v2</option>
+                    <option value="arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-instant-v1">Claude-Instant-v1</option>
+                    <option value="arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-text-lite-v1">Amazon Titan Text-Lite-v1</option>
+                    <option value="llama3-8b-8192">Llama3-8b</option>
+                    <option value="mixtral-8x7b-32768'">Mixtral-8x7b</option>
+                    <option value="gemma-7b-it">Gemma-7b-it</option>
                 </select>
             </div>
             <button id="closeSettings">Close</button>
         </div>
     </div>
 
-    <div id="ethical-question-div" style="display:none;">
+    <div id="ethical-question-div" style="display:none; margin-bottom:15px">
       <span><b>What would you do in the following scenario:</b></span>
       <span id="ethical-question"></span>
     </div>
+
 		<div>
       <table style="text-align:center;">
         <tr>
@@ -220,8 +225,8 @@
         const machineResponse = document.getElementById('machine-response');
         const textContainerLabel = document.getElementById('text-container-label');
         const machineResponseLabel = document.getElementById('machine-response-label');
-
 				const comparisonResult = document.getElementById('comparison-result');
+
 				const ethicalQuestion = document.getElementById('ethical-question');
 				const ethicalQuestionDiv = document.getElementById('ethical-question-div');
 
@@ -345,8 +350,19 @@
 					}
 
 					function getMachineResponseAndCompare() {
+        
+              function getCurrentModel() {
+                    const modelSelect = document.getElementById('model-select');
+                    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+                    return selectedOption ? selectedOption.value: null;
+              }
+
+              const currentModel = getCurrentModel();
+              console.log('Current model:', currentModel);
+
 							data_for_request = {
 									ethical_question: ethicalQuestion.innerHTML,
+                  model: currentModel
 							}
 							console.log("Data for request");
 							console.log(data_for_request);
