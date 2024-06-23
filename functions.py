@@ -20,7 +20,7 @@ with open("ethical_questions.txt", "r") as file:
 def get_ethical_question():
   return random.choice(ethical_questions)
 
-def generate_ai_response(ethical_question, model):
+def generate_ai_response(ethical_question, model=SENTENCE_SCORING_MODEL):
   '''
   Given an ethical question, create an ai generated response to the question
   '''

@@ -7,39 +7,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body {
-          margin: 40px auto;
-          max-width: 550px;
-          line-height: 1.6;
-          font-size: 18px;
-          color: #444;
-          padding: 0 10px;
-        }
+          max-width: 550px; 
+          margin: 40px auto; 
+          padding: 0 10px; 
+          font: 18px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; 
+          color: #444 
+        } 
+
 
         h1, h2, h3 {
           line-height: 1.2
         }
 
-        #text-container, #submit-response-button, #machine-response-container, #comparison-result {
+        #submit-response-button, #comparison-result {
             display: none;
         }
 
-        .textarea-container {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        #text-container.centered {
-            margin: 0 auto;
-        }
-
-        .textarea-container textarea {
-            width: 49%;
-        }
-
 				#start-game-button, #submit-response-button, #multiplayer-button {
-						margin-top: 50px; /* Adjust this value as needed */
+						margin-top: 20px; /* Adjust this value as needed */
 				}
 
         .center {
@@ -50,41 +35,104 @@
               margin-bottom: 20px;
         }
 
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        #machine-response-container {
+            display: none;
+        }
+
+        #machine-response-container.visible {
+            display: table-cell;
+        }
+
+        #text-container-container {
+            display: none;
+        }
+
+        #text-container-container.visible {
+            display: table-cell;
+        }
+
+        #text-container, #machine-response {
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        #text-container-label {
+            display: none;
+        }
+
+        #text-container-label.visible {
+            display: table-cell;
+        }
+
+        #machine-response-label {
+            display: none;
+        }
+
+        #machine-response-label.visible {
+            display: table-cell;
+        }
     </style>
 </head>
 <body>
-    <div id="ethical-question" style="display: none;">
+    <div id="ethical-question">
     </div>
-    <div class="textarea-container">
-        <textarea id="text-container" rows="12" cols="40" class="centered"></textarea>
-        <textarea id="machine-response-container" rows="12" cols="40"></textarea>
-    </div>
+		<div>
+      <table style="text-align:center;">
+        <tr>
+          <th>
+            <label id='text-container-label' for="text-container" >Your response:</label>
+          </th>
+          <th>
+            <label id='machine-response-label' for="machine-response" >Opponent response:</label>
+          </th>
+        </tr>
+        <tr>
+          <td id='text-container-container'>
+            <textarea id='text-container' rows="12" name='text-container'></textarea>
+          </td>
+          <td id='machine-response-container'>
+            <textarea id='machine-response' rows="12" name='machine-response'></textarea>
+          </td>
+        </tr>
+      </table>
+		</div>
 
     <div class="center">
       <br />
       <div id="comparison-result"></div>
       <br />
       <button id="submit-response-button">Compare Results with AI</button>
-      <button id="start-game-button">New Game</button>
-      <button id="multiplayer-button">New Multiplayer Game</button>
+      <button id="start-game-button">New Game (vs. AI)</button>
+      <button id="multiplayer-button">New Game (vs. human)</button>
       <div id="multiplayer-input" style="display: none;">
         <input type="text" id="game-code-input" placeholder="Enter game code">
-        <button id="join-game-button">Join Game</button>
+         <button id="join-game-button">Join Game</button>
       </div>
     </div>
 
 		<script>
-				const socket = io();
+				const socket = io.connect(':8080');
 				let gameId = null;
         let playerId = null;
         let waitingForOtherPlayer = false;
 
 				const startGameButton = document.getElementById('start-game-button');
+				const textContainerContainer = document.getElementById('text-container-container');
 				const textContainer = document.getElementById('text-container');
 				const submitResponseButton = document.getElementById('submit-response-button');
 				const machineResponseContainer = document.getElementById('machine-response-container');
+        const machineResponse = document.getElementById('machine-response');
+        const textContainerLabel = document.getElementById('text-container-label');
+        const machineResponseLabel = document.getElementById('machine-response-label');
+
 				const comparisonResult = document.getElementById('comparison-result');
 				const ethicalQuestion = document.getElementById('ethical-question');
+
         let bothRespondedDotsInterval;
 
 				function streamText(container, text, delay = 20) {
@@ -105,14 +153,32 @@
 									addChar();
 							});
 				}
-					
-				function startGame() {
+
+        function clearGame() {
 						// Make sure there's nothig from the previous game
-						machineResponseContainer.style.display = 'none';
+						//machineResponseContainer.style.display = 'none';
+            machineResponseContainer.classList.remove('visible');
+						//textContainerContainer.style.display = 'none';
+            textContainerContainer.classList.remove('visible');
+
 						textContainer.value = '';
-						machineResponseContainer.value = '';
+						machineResponse.value = '';
+
 						comparisonResult.innerText = '';
 						comparisonResult.style.display = 'none';
+            // Reset color
+						comparisonResult.style.color = '#444';
+            // Reset the ethical question
+            ethicalQuestion.innerHTML = '';
+            // Reset the labels
+            textContainerLabel.classList.remove('visible');
+            machineResponseLabel.classList.remove('visible');
+        }
+					
+				function startGame() {
+            startGameButton.style.display = 'none';
+            clearGame();
+
 						// Also hide the new multiplayer game option
 						document.getElementById('multiplayer-button').style.display = 'none';
 
@@ -121,17 +187,29 @@
 						})
 						.then(response => response.json())
 						.then(data => {
+                console.log("Data from server");
+                console.log(data);
+
 								ethicalQuestion.innerHTML = data.question;
-								textContainer.style.display = 'block';
-								startGameButton.style.display = 'none';
+								//textContainerContainer.style.display = 'table';
+                textContainerContainer.classList.add('visible');
 								submitResponseButton.style.display = 'inline';
 						})
 						.catch(error => console.error('Error:', error));
 				}
 
 				function compareBothResponses() {
-							comparisonResult.innerText = 'Comparing responses...';
+              let ellipses = 0;
+              comparisonResult.innerText = 'Comparing responses' + '.'.repeat(ellipses);
+
+              // Mark this to be halted later once the comparison is done
+              bothRespondedDotsInterval = setInterval(() => {
+                  comparisonResult.innerText = 'Comparing responses' + '.'.repeat(ellipses);
+                  ellipses = (ellipses + 1) % 4;
+              }, 500);
 							comparisonResult.style.display = 'inline';
+              // Make both labels 
+              machineResponseContainer.classList.add('visible');
 							
 							fetch('/compare_responses', {
 									method: 'POST',
@@ -140,12 +218,17 @@
 									},
 									body: JSON.stringify({
 											human_response: textContainer.value,
-											machine_response: machineResponseContainer.value,
+											machine_response: machineResponse.value,
 											ethical_question: ethicalQuestion.innerHTML,
 									})
 							})
 							.then(response => response.json())
 							.then(data => {
+                  if (bothRespondedDotsInterval) {
+                      clearInterval(bothRespondedDotsInterval);
+                  } else {
+                      console.log("Not clearing interval")
+                  }
 									// Hide the "submit" button
 									if (data.winner === 'human') {
 											// Put the text in green
@@ -184,9 +267,12 @@
 							.then(response => response.json())
 							.then(data => {
 									submitResponseButton.style.display = 'none';
-									machineResponseContainer.style.display = 'inline';
+									//machineResponseContainer.style.display = 'table';
+                  textContainerLabel.classList.add('visible');
+                  machineResponseLabel.classList.add('visible');
+                  machineResponseContainer.classList.add('visible');
 									// Don't run any code until the text has finished streaming
-									streamText(machineResponseContainer, data.text).then(() => {
+									streamText(machineResponse, data.text).then(() => {
 										// Do nothing
 										setTimeout(() => {
 											compareBothResponses();
@@ -201,9 +287,9 @@
 				});
 
 				document.getElementById('multiplayer-button').addEventListener('click', () => {
+            clearGame();
 						document.getElementById('multiplayer-input').style.display = 'block';
 						document.getElementById('multiplayer-button').style.display = 'none';
-            // Hide the orindary start game button
             startGameButton.style.display = 'none';
 				});
 
@@ -228,7 +314,7 @@
 						if (waitingForOtherPlayer) {
 								waitingForOtherPlayer = false;
 								ethicalQuestion.innerHTML = data.question;
-								textContainer.style.display = 'block';
+								textContainerContainer.style.display = 'block';
 								submitResponseButton.style.display = 'inline';
 								submitResponseButton.innerText = 'Submit Response';
 								comparisonResult.style.display = 'none';
@@ -243,15 +329,39 @@
 						alert('This game is already full. Please try a different game code.');
 				});
 
-				socket.on('both_responded', () => {
+				socket.on('both_responded', (data) => {
             console.log("Just heard that both players have responded");
             console.log("And they responded on the right room");
+            responses = data.responses;
+            // Get the keys of resopnses
+            responses = Object.keys(responses);
+            // Get the key which does not match the playerId
+            otherPlayerId = responses.filter((response) => response !== playerId)[0];
+            // Get the response of the other player
+            otherPlayerResponse = data.responses[otherPlayerId];
+            // Show the response of the other player
+            console.log("The other player said:");
+            console.log(otherPlayerResponse);
+
+            // Show the response of the other player
+            //machineResponseContainer.style.display = 'block';
+            machineResponseContainer.classList.add('visible');
+            
+            // Don't run any code until the text has finished streaming
+            streamText(machineResponse, otherPlayerResponse).then(() => {
+              // Do nothing
+              // Set 10-second timeout before continuing
+              setTimeout(() => {
+                return 
+              }, 10);
+            });
+
             // Make the number of ellipses change
             let ellipses = 3;
-            comparisonResult.innerText = 'Other user has submitted! Comparing responses' + '.'.repeat(ellipses);
+            comparisonResult.innerText = 'Comparing responses' + '.'.repeat(ellipses);
             // Mark this to be halted later once the comparison is done
             bothRespondedDotsInterval = setInterval(() => {
-                comparisonResult.innerText = 'Other user has submitted! Comparing responses' + '.'.repeat(ellipses);
+                comparisonResult.innerText = 'Comparing responses' + '.'.repeat(ellipses);
                 ellipses = (ellipses + 1) % 4;
             }, 500);
             

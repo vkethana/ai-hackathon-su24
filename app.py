@@ -8,7 +8,7 @@ import uuid
 app = Flask(__name__)
 DISABLE_API_CALLS = True
 
-app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['SECRET_KEY'] = 'my_secret'
 socketio = SocketIO(app)
 games = {}
 
@@ -18,7 +18,9 @@ def index():
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    return jsonify({'question': get_ethical_question()})
+    question = get_ethical_question()
+    print("Question = ", question)
+    return jsonify({'question': question})
 
 @app.route('/get_machine_response', methods=['POST'])
 def get_machine_response():
@@ -97,7 +99,9 @@ def on_submit(data):
     if len(games[game_code]['responses']) == 2:
         print("Emitting both_responded")
         # send to both users
-        emit('both_responded', room=game_code)
+        # make JSON of both players' responses
+        emit('both_responded', {'responses': games[game_code]['responses']}, room=game_code)
+        #emit('both_responded', room=game_code)
         #other_player = [p for p in games[game_code]['players'] if p != player_id][0]
         #emit('both_responded', room=games[game_code]['sid'][other_player])
 
